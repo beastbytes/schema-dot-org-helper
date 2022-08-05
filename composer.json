@@ -1,5 +1,5 @@
 {
-    "name": "beastbytes/schema-dot-org",
+    "name": "beastbytes/schema-dot-org-helper",
     "description": "A helper for generating Schema.org JSON-LD",
     "keywords": [
         "helper",
