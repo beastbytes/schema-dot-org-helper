@@ -9,7 +9,7 @@ declare(strict_types=1);
 namespace BeastBytes\SchemaDotOrg;
 
 /**
- * Use SchemaDotOrgTrait in a view
+ * Use SchemaDotOrgTrait in a view when schemas are to be output in response to a WebView event
  */
 trait SchemaDotOrgTrait
 {

@@ -22,8 +22,9 @@ or add
 to the require section of your composer.json.
 
 ## Usage
-In a view:
+To directly generate and output a schema:
 ```php
+// In the view
 $mapping = [
     // define mapping
 ];
@@ -31,10 +32,12 @@ $model = [
     // model can be an array or an object
 ];
 echo SchemaDotOrg::generate($mapping, $model);
+// Multiple schemas can be generated
 ```
 
-To generate the Schema.org JSON-LD in response to a view event - Yiisoft\View\Event\WebView\BodyEnd is preferred, in the view:
+Schemas can be generated in response to a WebView event - Yiisoft\View\Event\WebView\BodyEnd is preferred using the SchemaDotOrgTrait in the view and attaching WebViewEventHandler to the event.
 ```php
+// In the view
 use BeastBytes\SchemaDotOrg\SchemaDotOrgTrait;
 
 $mapping = [
@@ -45,6 +48,7 @@ $model = [
 ];
 
 $this->addSchema($mapping, $model);
+// Multiple schemas can be added 
 ```
 
 In config/events-web.php :
