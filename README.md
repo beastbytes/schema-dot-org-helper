@@ -25,6 +25,8 @@ to the require section of your composer.json.
 To directly generate and output a schema:
 ```php
 // In the view
+use BeastBytes\SchemaDotOrg\SchemaDotOrg;
+
 $mapping = [
     // define mapping
 ];
@@ -35,10 +37,10 @@ echo SchemaDotOrg::generate($mapping, $model);
 // Multiple schemas can be generated
 ```
 
-Schemas can be generated in response to a WebView event - Yiisoft\View\Event\WebView\BodyEnd is preferred using the SchemaDotOrgTrait in the view and attaching WebViewEventHandler to the event.
+Schemas can be generated in response to a WebView event - Yiisoft\View\Event\WebView\BodyEnd is preferred:
 ```php
 // In the view
-use BeastBytes\SchemaDotOrg\SchemaDotOrgTrait;
+use BeastBytes\SchemaDotOrg\SchemaDotOrg;
 
 $mapping = [
     // define mapping
@@ -47,7 +49,7 @@ $model = [
     // model
 ];
 
-$this->addSchema($mapping, $model);
+SchemaDotOrg::addSchema($this, $mapping, $model);
 // Multiple schemas can be added 
 ```
 

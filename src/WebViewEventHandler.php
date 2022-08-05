@@ -15,9 +15,9 @@ final class WebViewEventHandler
     {
         /** @psalm-suppress InternalMethod */
         $view = $event->getView();
-        if ($view->hasParameter('schema')) {
+        if ($view->hasParameter(SchemaDotOrg::VIEW_PARAMETER)) {
             /** @var array $schema */
-            foreach ($view->getParameter('schema') as $schema) {
+            foreach ($view->getParameter(SchemaDotOrg::VIEW_PARAMETER) as $schema) {
                 extract($schema, EXTR_OVERWRITE);
                 /**
                  * @var array $mapping

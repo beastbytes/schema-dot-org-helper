@@ -11,6 +11,7 @@ namespace BeastBytes\SchemaDotOrg;
 use Yiisoft\Arrays\ArrayHelper;
 use Yiisoft\Html\Tag\Script;
 use Yiisoft\Json\Json;
+use Yiisoft\View\WebView;
 
 /**
  * {@link https://schema.org/ Schema.org} helper methods for generating JSON-LD markup
@@ -48,6 +49,19 @@ final class SchemaDotOrg
      ```
      */
     public const STRING_LITERAL = ':';
+    public const VIEW_PARAMETER = 'schemaDotOrg';
+
+    public static function addSchema(WebView $view, array $mapping, $model): void
+    {
+        /** @var array $schemas */
+        $schemas = $view->hasParameter(self::VIEW_PARAMETER)
+            ? $view->getParameter(self::VIEW_PARAMETER)
+            : []
+        ;
+
+        $schemas[] = compact('mapping', 'model');
+        $view->setParameter(self::VIEW_PARAMETER, $schemas);
+    }
 
     /**
      * Returns a JSON-LD schema for a model
@@ -120,7 +134,7 @@ final class SchemaDotOrg
             if (is_array($value)) {
                 $jsonLD[$key] = self::jsonLD($value, $model);
             } elseif (is_numeric($value)) {
-                $jsonLD[$key] = $value;
+                $jsonLD[$key] = (string)$value;
             } elseif ($value[0] === self::STRING_LITERAL) { // check for string literal
                 /** @var string $value */
                 $jsonLD[$key] = substr($value, 1);
