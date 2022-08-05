@@ -13,15 +13,19 @@ class WebViewEventHandler
 {
     public function handle(WebViewEvent $event): void
     {
+        /** @psalm-suppress InternalMethod */
         $view = $event->getView();
-        if ($view->hasParameter('schemaDotOrg')) {
-            /**
-             * @var array $schema
-             * @var array|object $model
-             * @psalm-suppress MixedArgument
-             */
-            extract($view->getParameter('schemaDotOrg'), EXTR_OVERWRITE);
-            echo SchemaDotOrg::jsonLD($schema, $model);
+        if ($view->hasParameter('schema')) {
+            /** @var array $schema */
+            foreach ($view->getParameter('schema') as $schema) {
+                /**
+                 * @var array $mapping
+                 * @var array|object $model
+                 * @psalm-suppress MixedArgument
+                 */
+                extract($schema, EXTR_OVERWRITE);
+                echo SchemaDotOrg::generate($mapping, $model);
+            }
         }
     }
 }

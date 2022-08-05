@@ -24,25 +24,27 @@ to the require section of your composer.json.
 ## Usage
 In a view:
 ```php
-$schema = [
-    // define schema
+$mapping = [
+    // define mapping
 ];
 $model = [
     // model can be an array or an object
 ];
-echo SchemaDotOrg::jsonLD($schema, $model);
+echo SchemaDotOrg::generate($mapping, $model);
 ```
 
 To generate the Schema.org JSON-LD in response to a view event - Yiisoft\View\Event\WebView\BodyEnd is preferred, in the view:
 ```php
-$schema = [
-    // define schema
+use BeastBytes\SchemaDotOrg\SchemaDotOrgTrait;
+
+$mapping = [
+    // define mapping
 ];
 $model = [
     // model
 ];
 
-$this->setParameter('schemaDotOrg', compact('schema', 'model'));
+$this->addSchema($mapping, $model);
 ```
 
 In config/events-web.php :
@@ -59,9 +61,10 @@ return [
     // other event handlers
 ];
 ```
-The schema is an array of the form:
+## Defining a Schema Mapping
+A schema mapping is an array that defines the mapping of model properties to Schema.org properties; it is of the form:
 ```php
-$schema = [
+$mapping = [
     'Type' => [
         'schemaDotOrgProperty' => 'model.property', // or
         'model.property' // if the Schema.org and property names are the same
@@ -82,10 +85,28 @@ Where a Schema.org property is defined as a Schema.org type, the type is a neste
 ]
 ```
 
-Example schema definition:
+If a Schema.org property is to be a string literal, prepend with SchemaDotOrg::STRING_LITERAL :
 ```php
 [
-    'LocalBusiness' => [ // @type: *always* begin with an uppercase letter
+    'Type' => [
+        'schemaDotOrgProperty' => SchemaDotOrg::STRING_LITERAL . 'Literal value'
+    ]
+]
+```
+
+If a Schema.org property is a SchemaDotOrg Enumeration value, prepend with SchemaDotOrg::ENUMERATION :
+```php
+[
+    'Type' => [
+        'schemaDotOrgProperty' => SchemaDotOrg::ENUMERATION . 'EnumerationName'
+    ]
+]
+```
+
+Example schema mapping definition:
+```php
+[
+    'LocalBusiness' => [ // @type always begins with an uppercase letter
         'name' => 'org', // maps the 'org' property of the model to the Schema.org 'name' property
         'address' => [ // the Schema.org 'address' property is a PostalAddress type
             'PostalAddress' => [ // @type
@@ -97,13 +118,14 @@ Example schema definition:
         ],
         'location' => [
             'Place' => [
-                'geo' => [
-                    'GeoCoordinates' => [
-                        'geo.elevation',
-                        'geo.latitude',
-                        'geo.longitude'
-                    ]
-                ]
+                'additionalProperty' => [
+                    'PropertyValue' => [
+                        'propertyID' => SchemaDotOrg::STRING_LITERAL . 'what3words',
+                        'value' => 'adr.what3words',
+                    ],           
+                ],
+                'latitude',
+                'longitude',
             ],
         ],
         'email',
@@ -121,4 +143,44 @@ Example schema definition:
         ]
     ]
 ]
+```
+
+Example JSON-LD generated using the above schema mapping (Note: values are examples and whitespace is removed in actual output):
+```html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "Business Name",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "99 Fencott Road",
+    addressLocality: "Fencott",
+    addressRegion: "Oxon",
+    postalCode: "OX5 2RD"    
+  }
+  "location": {
+    "@type": "Place",
+    "additionalProperty": {
+      "@type": "PropertyValue",
+      "propertyID": "what3words",
+      "value": "tangent.migrate.commander"
+    },
+    "latitude": "51.84095049377005",
+    "longitude": "-1.1709238113995422",
+  },
+  "email": "getintouch@example.com",
+  "telephone": "01865 369248",
+  "currenciesAccepted": "GBP",
+  "image": "https://example.com/images/logo.svg",
+  "makesOffer": {
+    "@type": "Offer",
+    "name": "Awesome Product",
+    "description": "The ony product you will ever need",
+    "price": "999.99",
+    "priceCurrency": "GBP",
+    "availability": "https://schema.org/InStock"
+  }  
+}
+</script>
 ```

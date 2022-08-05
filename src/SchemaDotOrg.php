@@ -14,10 +14,8 @@ use Yiisoft\Json\Json;
 
 /**
  * {@link https://schema.org/ Schema.org} helper methods for generating JSON-LD markup
- *
- * @author Chris Yates
  */
-class SchemaDotOrg
+final class SchemaDotOrg
 {
     /**
      * Schema.org context for JSON-LD
@@ -54,19 +52,19 @@ class SchemaDotOrg
     /**
      * Returns a JSON-LD schema for a model
      *
-     * @param array $schema Schema.org type definition
+     * @param array $mapping Schema.org mapping definition
      * @param array|Object $model Data model
      * @return string JSON-LD format schema
      * @throws \Exception
      */
-    public static function jsonLD(array $schema, $model = []): string
+    public static function generate(array $mapping, $model = []): string
     {
         return Script::tag()
             ->content(
                 Json::encode(
                     array_merge(
                         ['@context' => self::CONTEXT],
-                        self::_jsonLD($schema, $model)
+                        self::jsonLD($mapping, $model)
                     )
                 )
             )
@@ -77,50 +75,61 @@ class SchemaDotOrg
     /**
      * Returns an array of JSON-LD for a schema.org type
      *
-     * @param array $schema
+     * @param array $mapping
      * @param array|Object $model
      * @return array
      * @throws \Exception
      */
-    private static function _jsonLD(array $schema, $model): array
+    private static function jsonLD(array $mapping, $model): array
     {
         $jsonLD = [];
 
-        foreach ($schema as $key => $value) {
+        /**
+         * @var int|string $key
+         * @var mixed $value
+         */
+        foreach ($mapping as $key => $value) {
             if (is_string($key)) {
                 if (preg_match('/^[A-Z]/', $key)) {
-                    if (isset($value[0]) && is_array($value[0])) { // array of objects of type $key
-                        $objects = [];
+                    if (isset($value[0]) && is_array($value[0])) { // array of types of the type $key
+                        $types = [];
 
-                        foreach ($value as $object) {
-                            $objects[] = array_merge(
+                        /** @var array $type */
+                        foreach ($value as $type) {
+                            $types[] = array_merge(
                                 ['@type' => $key],
-                                self::_jsonLD($object, $model)
+                                self::jsonLD($type, $model)
                             );
                         }
                         
-                        return $objects;
+                        return $types;
                     }
 
+                    /** @var array $value */
                     return array_merge(
                         ['@type' => $key],
-                        self::_jsonLD($value, $model)
+                        self::jsonLD($value, $model)
                     );
                 }
             } elseif (is_string($value)) {
-                $key = explode('.', $value);
-                $key = array_pop($key);
+                $ary = explode('.', $value);
+                $key = array_pop($ary);
             }
 
+            /** @psalm-suppress MixedArrayAccess */
             if (is_array($value)) {
-                $jsonLD[$key] = self::_jsonLD($value, $model);
+                $jsonLD[$key] = self::jsonLD($value, $model);
             } elseif (is_numeric($value)) {
                 $jsonLD[$key] = $value;
             } elseif ($value[0] === self::STRING_LITERAL) { // check for string literal
+                /** @var string $value */
                 $jsonLD[$key] = substr($value, 1);
             } elseif ($value[0] === self::ENUMERATION) { // check for enumeration value
+                /** @var string $value */
                 $jsonLD[$key] = self::CONTEXT . '/' . substr($value, 1);
             } else {
+                /** @var string $value */
+                /** @psalm-suppress MixedAssignment */
                 $jsonLD[$key] = ArrayHelper::getValueByPath($model, $value);
             }
         }
