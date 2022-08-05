@@ -91,8 +91,8 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
         $model = [
             'name' => 'The Ultimate Product',
             'description' => 'The only product you will ever need',
-            'quantityAvailable' => 10,
-            'price' => '1000000',
+            'quantityAvailable' => random_int(0, 1),
+            'price' => random_int(99, 99999) / 100,
             'currency' => 'GBP'
         ];
 
@@ -119,8 +119,8 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
         $expected .= '"description":"The only product you will ever need",';
         $expected .= '"offers":{';
         $expected .= '"@type":"Offer",';
-        $expected .= '"availability":"https://schema.org/InStock",';
-        $expected .= '"price":"1000000",';
+        $expected .= '"availability":"https://schema.org/' . ($model['quantityAvailable'] > 0 ? 'In' : 'OutOf') . 'Stock",';
+        $expected .= '"price":' . (string)$model['price']  . ',';
         $expected .= '"priceCurrency":"GBP"';
         $expected .= '}';
         $expected .= '}</script>';
@@ -133,8 +133,8 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
         $model = [
             'name' => 'The Ultimate Product',
             'description' => 'The only product you will ever need',
-            'quantityAvailable' => 0,
-            'price' => '999.99'
+            'quantityAvailable' => random_int(0, 1),
+            'price' => random_int(99, 99999) / 100,
         ];
 
         $mapping = [
@@ -160,8 +160,8 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
         $expected .= '"description":"The only product you will ever need",';
         $expected .= '"offers":{';
         $expected .= '"@type":"Offer",';
-        $expected .= '"availability":"https://schema.org/OutOfStock",';
-        $expected .= '"price":"999.99",';
+        $expected .= '"availability":"https://schema.org/' . ($model['quantityAvailable'] > 0 ? 'In' : 'OutOf') . 'Stock",';
+        $expected .= '"price":' . $model['price']  . ',';
         $expected .= '"priceCurrency":"EUR"';
         $expected .= '}';
         $expected .= '}</script>';
