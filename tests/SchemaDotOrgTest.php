@@ -36,7 +36,7 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
         $expected .= '"postalCode":"SW1A"';
         $expected .= '}</script>';
 
-        $schema = [
+        $mapping = [
             'PostalAddress' => [
                 'streetAddress',
                 'addressLocality' => 'locality',
@@ -45,7 +45,7 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
             ]
         ];
 
-        $actual = SchemaDotOrg::jsonLD($schema, $this->adr);
+        $actual = SchemaDotOrg::generate($mapping, $this->adr);
         $this->assertSame($expected, $actual);
     }
 
@@ -53,7 +53,7 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
     {
         $this->org['adr'] = $this->adr;
 
-        $schema = [
+        $mapping = [
             'GovernmentOrganization' => [
                 'name' => 'org',
                 'address' => [
@@ -82,7 +82,7 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
         $expected .= '"telephone":"+44-20-7925-0918"';
         $expected .= '}</script>';
 
-        $actual = SchemaDotOrg::jsonLD($schema, $this->org);
+        $actual = SchemaDotOrg::generate($mapping, $this->org);
         $this->assertSame($expected, $actual);
     }
 
@@ -96,7 +96,7 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
             'currency' => 'GBP'
         ];
 
-        $schema = [
+        $mapping = [
             'Product' => [
                 'name',
                 'description',
@@ -125,7 +125,7 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
         $expected .= '}';
         $expected .= '}</script>';
 
-        $actual = SchemaDotOrg::jsonLD($schema, $model);
+        $actual = SchemaDotOrg::generate($mapping, $model);
         $this->assertSame($expected, $actual);
     }
 
@@ -137,7 +137,7 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
             'price' => '999.99'
         ];
 
-        $schema = [
+        $mapping = [
             'Product' => [
                 'name',
                 'description',
@@ -166,7 +166,7 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
         $expected .= '}';
         $expected .= '}</script>';
 
-        $actual = SchemaDotOrg::jsonLD($schema, $model);
+        $actual = SchemaDotOrg::generate($mapping, $model);
         $this->assertSame($expected, $actual);
     }
 }
