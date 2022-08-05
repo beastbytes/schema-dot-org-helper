@@ -9,7 +9,7 @@ namespace BeastBytes\SchemaDotOrg;
 
 use Yiisoft\View\Event\WebView\WebViewEvent;
 
-class WebViewEventHandler
+final class WebViewEventHandler
 {
     public function handle(WebViewEvent $event): void
     {
