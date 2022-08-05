@@ -18,12 +18,12 @@ final class WebViewEventHandler
         if ($view->hasParameter('schema')) {
             /** @var array $schema */
             foreach ($view->getParameter('schema') as $schema) {
+                extract($schema, EXTR_OVERWRITE);
                 /**
                  * @var array $mapping
                  * @var array|object $model
                  * @psalm-suppress MixedArgument
                  */
-                extract($schema, EXTR_OVERWRITE);
                 echo SchemaDotOrg::generate($mapping, $model);
             }
         }
