@@ -9,6 +9,11 @@ declare(strict_types=1);
 namespace BeastBytes\SchemaDotOrg\tests;
 
 use BeastBytes\SchemaDotOrg\SchemaDotOrg;
+use Yiisoft\EventDispatcher\Dispatcher\Dispatcher;
+use Yiisoft\EventDispatcher\Provider\ListenerCollection;
+use Yiisoft\EventDispatcher\Provider\Provider;
+use Yiisoft\View\Event\WebView\BodyEnd;
+use Yiisoft\View\WebView;
 
 class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
 {
@@ -27,15 +32,6 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
 
     public function testSimpleSchema()
     {
-        $expected = '<script type="application/ld+json">{';
-        $expected .= '"@context":"https://schema.org",';
-        $expected .= '"@type":"PostalAddress",';
-        $expected .= '"streetAddress":"10 Downing Street",';
-        $expected .= '"addressLocality":"City of Westminster",';
-        $expected .= '"addressRegion":"London",';
-        $expected .= '"postalCode":"SW1A"';
-        $expected .= '}</script>';
-
         $mapping = [
             'PostalAddress' => [
                 'streetAddress',
@@ -45,14 +41,21 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
             ]
         ];
 
-        $actual = SchemaDotOrg::generate($mapping, $this->adr);
-        $this->assertSame($expected, $actual);
+        $expected = '<script type="application/ld+json">{';
+        $expected .= '"@context":"https://schema.org",';
+        $expected .= '"@type":"PostalAddress",';
+        $expected .= '"streetAddress":"10 Downing Street",';
+        $expected .= '"addressLocality":"City of Westminster",';
+        $expected .= '"addressRegion":"London",';
+        $expected .= '"postalCode":"SW1A"';
+        $expected .= '}</script>';
+
+        $this->assertSame($expected, SchemaDotOrg::generate($mapping, $this->adr));
+        $this->assert($expected, $mapping, $this->adr);
     }
 
     public function testNestedSchema()
     {
-        $this->org['adr'] = $this->adr;
-
         $mapping = [
             'GovernmentOrganization' => [
                 'name' => 'org',
@@ -81,9 +84,10 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
         $expected .= '},';
         $expected .= '"telephone":"+44-20-7925-0918"';
         $expected .= '}</script>';
+        $this->org['adr'] = $this->adr;
 
-        $actual = SchemaDotOrg::generate($mapping, $this->org);
-        $this->assertSame($expected, $actual);
+        $this->assertSame($expected, SchemaDotOrg::generate($mapping, $this->org));
+        $this->assert($expected, $mapping, $this->org);
     }
 
     public function testEnumeration()
@@ -125,8 +129,8 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
         $expected .= '}';
         $expected .= '}</script>';
 
-        $actual = SchemaDotOrg::generate($mapping, $model);
-        $this->assertSame($expected, $actual);
+        $this->assertSame($expected, SchemaDotOrg::generate($mapping, $model));
+        $this->assert($expected, $mapping, $model);
     }
 
     public function testStringLiteral() {
@@ -166,7 +170,26 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
         $expected .= '}';
         $expected .= '}</script>';
 
-        $actual = SchemaDotOrg::generate($mapping, $model);
+        $this->assertSame($expected, SchemaDotOrg::generate($mapping, $model));
+        $this->assert($expected, $mapping, $model);
+    }
+
+    private function assert(string $expected, array $mapping, array $model): void {
+        $view = $this->createView();
+
+        SchemaDotOrg::addSchema($view, $mapping, $model);
+        ob_start();
+        $view->endBody();
+        $actual = preg_replace('|<!\[CDATA\[YII-BLOCK-BODY-END-.+]]>|', '', ob_get_clean());
+
         $this->assertSame($expected, $actual);
+    }
+
+    private function createView(): WebView {
+        $listeners = (new ListenerCollection())
+            ->add([SchemaDotOrg::class, 'handle'], BodyEnd::class);
+
+        $provider = new Provider($listeners);
+        return new WebView('', new Dispatcher($provider));
     }
 }

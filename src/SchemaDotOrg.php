@@ -11,6 +11,7 @@ namespace BeastBytes\SchemaDotOrg;
 use Yiisoft\Arrays\ArrayHelper;
 use Yiisoft\Html\Tag\Script;
 use Yiisoft\Json\Json;
+use Yiisoft\View\Event\WebView\BodyEnd;
 use Yiisoft\View\WebView;
 
 /**
@@ -64,14 +65,29 @@ final class SchemaDotOrg
     }
 
     /**
-     * Returns a JSON-LD schema for a model
-     *
-     * @param array $mapping Schema.org mapping definition
-     * @param array|Object $model Data model
-     * @return string JSON-LD format schema
-     * @throws \Exception
+     * @throws \JsonException
      */
-    public static function generate(array $mapping, $model = []): string
+    public static function handle(BodyEnd $event): void
+    {
+        /** @psalm-suppress InternalMethod */
+        $view = $event->getView();
+        if ($view->hasParameter(self::VIEW_PARAMETER)) {
+            /** @var array $schema */
+            foreach ($view->getParameter(self::VIEW_PARAMETER) as $schema) {
+                echo self::generate($schema['mapping'], $schema['model']);
+            }
+        }
+    }
+
+    /**
+     * Returns a JSON-LD string for a schema.org type
+     *
+     * @param array $mapping
+     * @param array|object $model
+     * @return string
+     * @throws \JsonException
+     */
+    public static function generate(array $mapping, $model): string
     {
         return Script::tag()
             ->content(
@@ -90,9 +106,8 @@ final class SchemaDotOrg
      * Returns an array of JSON-LD for a schema.org type
      *
      * @param array $mapping
-     * @param array|Object $model
+     * @param array|object $model
      * @return array
-     * @throws \Exception
      */
     private static function jsonLD(array $mapping, $model): array
     {

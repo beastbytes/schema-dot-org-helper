@@ -14,7 +14,8 @@
         "yiisoft/arrays": "^2.0",
         "yiisoft/event-dispatcher": "^1.0",
         "yiisoft/html": "^2.0",
-        "yiisoft/json": "^1.0"
+        "yiisoft/json": "^1.0",
+        "ext-json": "*"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.5",
@@ -30,6 +31,24 @@
     "autoload-dev": {
         "psr-4": {
             "BeastBytes\\SchemaDotOrg\\tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "config-plugin-options": {
+            "source-directory": "config"
+        },
+        "config-plugin": {
+            "events": "events.php",
+            "events-web": [
+                "$events",
+                "events-web.php"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "yiisoft/config": true
         }
     }
 }

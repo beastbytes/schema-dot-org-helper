@@ -37,7 +37,9 @@ echo SchemaDotOrg::generate($mapping, $model);
 // Multiple schemas can be generated
 ```
 
-Schemas can be generated in response to a WebView event - Yiisoft\View\Event\WebView\BodyEnd is preferred:
+Schemas can be generated in response to a WebView event - Yiisoft\View\Event\WebView\BodyEnd is preferred and is 
+defined in config/events-web.php
+
 ```php
 // In the view
 use BeastBytes\SchemaDotOrg\SchemaDotOrg;
@@ -53,20 +55,6 @@ SchemaDotOrg::addSchema($this, $mapping, $model);
 // Multiple schemas can be added 
 ```
 
-In config/events-web.php :
-
-```php
-use BeastBytes\SchemaDotOrg\WebViewEventHandler;
-use Yiisoft\View\Event\WebView\BodyEnd;
-
-return [
-    // other event handlers
-    BodyEnd::class => [
-        [WebViewEventHandler::class, 'handle']
-    ],
-    // other event handlers
-];
-```
 ## Defining a Schema Mapping
 A schema mapping is an array that defines the mapping of model properties to Schema.org properties; it is of the form:
 ```php
@@ -151,7 +139,8 @@ Example schema mapping definition:
 ]
 ```
 
-Example JSON-LD generated using the above schema mapping (Note: values are examples and whitespace is removed in actual output):
+Example JSON-LD generated using the above schema mapping (Note: values are examples and necessary whitespace is 
+removed in the actual output):
 ```html
 <script type="application/ld+json">
 {
