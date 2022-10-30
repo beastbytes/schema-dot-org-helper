@@ -178,3 +178,35 @@ Example JSON-LD generated using the above schema mapping:
 }
 </script>
 ```
+
+## Twig Templates
+
+To use the helper in a Twig templates include it in CommonViewInjection (in the examples it is assigned to the 
+schemaDotOrg variable), then in the template either:
+
+to output the schema's JSON-LD immediately:
+```twig
+{{ schemaDotOrg.generate(model, mapping) }}
+```
+or to add a schema to the view to be output on the BodyEnd event:
+```twig
+{% do schemaDotOrg.addSchema(this, model, mapping) %}
+```
+### Defining the Mapping
+
++ In Twig templates the mapping must define both the SchemaDotOrg property and the model property, even if they have the same name.
++ To use the SchemaDotOrg class constants use Twig's constant() function and concatenate the string
+
+For example:
+
+```twig
+{
+    Offer: {
+        name: 'name',
+        description: 'description',
+        price: 'price',
+        priceCurrency: constant('STRING_LITERAL', schemaDotOrg) ~ 'GBP',
+        availability: constant('ENUMERATION', schemaDotOrg) ~ 'InStock'
+    }
+}
+```
