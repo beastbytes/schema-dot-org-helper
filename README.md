@@ -33,7 +33,7 @@ $mapping = [
 $model = [
     // model can be an array or an object
 ];
-echo SchemaDotOrg::generate($mapping, $model);
+echo SchemaDotOrg::generate($model, $mapping);
 // Multiple schemas can be generated
 ```
 
@@ -51,7 +51,7 @@ $model = [
     // model
 ];
 
-SchemaDotOrg::addSchema($this, $mapping, $model);
+SchemaDotOrg::addSchema($this, $model, $mapping);
 // Multiple schemas can be added 
 ```
 
@@ -139,8 +139,7 @@ Example schema mapping definition:
 ]
 ```
 
-Example JSON-LD generated using the above schema mapping (Note: values are examples and necessary whitespace is 
-removed in the actual output):
+Example JSON-LD generated using the above schema mapping:
 ```html
 <script type="application/ld+json">
 {
@@ -161,8 +160,8 @@ removed in the actual output):
       "propertyID": "what3words",
       "value": "tangent.migrate.commander"
     },
-    "latitude": "51.84095049377005",
-    "longitude": "-1.1709238113995422",
+    "latitude": 51.84095049377005,
+    "longitude": -1.1709238113995422,
   },
   "email": "getintouch@example.com",
   "telephone": "01865 369248",
@@ -172,7 +171,7 @@ removed in the actual output):
     "@type": "Offer",
     "name": "Awesome Product",
     "description": "The ony product you will ever need",
-    "price": "999.99",
+    "price": 999.99,
     "priceCurrency": "GBP",
     "availability": "https://schema.org/InStock"
   }  
