@@ -181,8 +181,13 @@ Example JSON-LD generated using the above schema mapping:
 
 ## Twig Templates
 
-To use the helper in a Twig templates include it in CommonViewInjection (in the examples it is assigned to the 
-schemaDotOrg variable), then in the template either:
+To use the helper in a Twig templates either include it in CommonViewInjection (in the examples it is assigned to the 
+schemaDotOrg variable) or in the template
+
+```twig
+{% set schemaDotOrg = get('BeastBytes\\SchemaDotOrg\\SchemaDotOrg') %}
+```
+Then in the template either:
 
 to output the schema's JSON-LD immediately:
 ```twig
