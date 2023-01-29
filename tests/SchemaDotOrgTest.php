@@ -50,8 +50,8 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
         $expected .= '"postalCode":"SW1A"';
         $expected .= '}</script>';
 
-        $this->assertSame($expected, SchemaDotOrg::generate($mapping, $this->adr));
-        $this->assert($expected, $mapping, $this->adr);
+        $this->assertSame($expected, SchemaDotOrg::generate($this->adr, $mapping));
+        $this->assert($expected, $this->adr, $mapping);
     }
 
     public function testNestedSchema()
@@ -84,10 +84,11 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
         $expected .= '},';
         $expected .= '"telephone":"+44-20-7925-0918"';
         $expected .= '}</script>';
+
         $this->org['adr'] = $this->adr;
 
-        $this->assertSame($expected, SchemaDotOrg::generate($mapping, $this->org));
-        $this->assert($expected, $mapping, $this->org);
+        $this->assertSame($expected, SchemaDotOrg::generate($this->org, $mapping));
+        $this->assert($expected, $this->org, $mapping);
     }
 
     public function testEnumeration()
@@ -129,8 +130,8 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
         $expected .= '}';
         $expected .= '}</script>';
 
-        $this->assertSame($expected, SchemaDotOrg::generate($mapping, $model));
-        $this->assert($expected, $mapping, $model);
+        $this->assertSame($expected, SchemaDotOrg::generate($model, $mapping));
+        $this->assert($expected, $model, $mapping);
     }
 
     public function testStringLiteral() {
@@ -170,14 +171,14 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
         $expected .= '}';
         $expected .= '}</script>';
 
-        $this->assertSame($expected, SchemaDotOrg::generate($mapping, $model));
-        $this->assert($expected, $mapping, $model);
+        $this->assertSame($expected, SchemaDotOrg::generate($model, $mapping));
+        $this->assert($expected, $model, $mapping);
     }
 
-    private function assert(string $expected, array $mapping, array $model): void {
+    private function assert(string $expected, array $model, array $mapping): void {
         $view = $this->createView();
 
-        SchemaDotOrg::addSchema($view, $mapping, $model);
+        SchemaDotOrg::addSchema($view, $model, $mapping);
         ob_start();
         $view->endBody();
         $actual = preg_replace('|<!\[CDATA\[YII-BLOCK-BODY-END-.+]]>|', '', ob_get_clean());
