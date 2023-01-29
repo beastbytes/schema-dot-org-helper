@@ -11,7 +11,7 @@
     "prefer-stable": true,
     "require": {
         "php": "^8.0",
-        "yiisoft/arrays": "^2.0",
+        "yiisoft/arrays": "^3.0",
         "yiisoft/event-dispatcher": "^1.0",
         "yiisoft/html": "^3.0",
         "yiisoft/json": "^1.0",
