@@ -37,8 +37,7 @@ echo SchemaDotOrg::generate($model, $mapping);
 // Multiple schemas can be generated
 ```
 
-Schemas can be generated in response to a WebView event - Yiisoft\View\Event\WebView\BodyEnd is preferred and is 
-defined in config/events-web.php
+Schemas can be generated in response to a WebView event; by default the helper responds to Yiisoft\View\Event\WebView\BodyEnd. The helper will output all schemas previously added in response to the event.
 
 ```php
 // In the view
@@ -93,6 +92,40 @@ If a Schema.org property is a SchemaDotOrg Enumeration value, prepend with Schem
 [
     'Type' => [
         'schemaDotOrgProperty' => SchemaDotOrg::ENUMERATION . 'EnumerationName'
+    ]
+]
+```
+
+If a Schema.org property is an array of values - usually nested types - specify the mapping as an array.
+The key must be or start with SchemaDotOrg::ARRAY. If it is just SchemaDotOrg::ARRAY the mapping parent key is the
+model property, else the model property is the remainder of the key; both forms are shown below:
+```php
+[
+    'EducationalOrganization' => [
+        'name',
+        'alumni' => [
+            SchemaDotOrg::ARRAY => [ // the model property is 'alumni'
+                'Person' => [
+                    'familyName',
+                    'givenName'
+                ]
+            ]
+        ]
+    ]
+]
+```
+```php
+[
+    'EducationalOrganization' => [
+        'name',
+        'alumni' => [
+            SchemaDotOrg::ARRAY . 'pastPupils' => [ // the model property is 'pastPupils'
+                'Person' => [
+                    'familyName',
+                    'givenName'
+                ]
+            ]
+        ]
     ]
 ]
 ```
@@ -188,6 +221,7 @@ schemaDotOrg variable) or in the template
 {% set schemaDotOrg = get('BeastBytes\\SchemaDotOrg\\SchemaDotOrg') %}
 ```
 Then in the template either:
+
 
 to output the schema's JSON-LD immediately:
 ```twig
