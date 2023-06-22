@@ -9,6 +9,7 @@ declare(strict_types=1);
 namespace BeastBytes\SchemaDotOrg\tests;
 
 use BeastBytes\SchemaDotOrg\SchemaDotOrg;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Yiisoft\EventDispatcher\Dispatcher\Dispatcher;
 use Yiisoft\EventDispatcher\Provider\ListenerCollection;
 use Yiisoft\EventDispatcher\Provider\Provider;
@@ -17,176 +18,355 @@ use Yiisoft\View\WebView;
 
 class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
 {
-    private array $adr = [
-        'streetAddress' => '10 Downing Street',
-        'locality' => 'City of Westminster',
-        'region' => 'London',
-        'postalCode' => 'SW1A'
-    ];
+    private WebView|null $view = null;
 
-    private array $org = [
-        'org' => 'UK Government',
-        'adr' => null,
-        'tel' => '+44-20-7925-0918'
-    ];
-
-    public function testSimpleSchema()
+    protected function tearDown(): void
     {
-        $mapping = [
-            'PostalAddress' => [
-                'streetAddress',
-                'addressLocality' => 'locality',
-                'addressRegion' => 'region',
-                'postalCode'
-            ]
-        ];
-
-        $expected = '<script type="application/ld+json">{';
-        $expected .= '"@context":"https://schema.org",';
-        $expected .= '"@type":"PostalAddress",';
-        $expected .= '"streetAddress":"10 Downing Street",';
-        $expected .= '"addressLocality":"City of Westminster",';
-        $expected .= '"addressRegion":"London",';
-        $expected .= '"postalCode":"SW1A"';
-        $expected .= '}</script>';
-
-        $this->assertSame($expected, SchemaDotOrg::generate($this->adr, $mapping));
-        $this->assert($expected, $this->adr, $mapping);
+        $this->view = null;
     }
 
-    public function testNestedSchema()
+    #[DataProvider('schemaProvider')]
+    public function test_schema(array $model, array $mapping, string $expected)
     {
-        $mapping = [
-            'GovernmentOrganization' => [
-                'name' => 'org',
-                'address' => [
+        $this->assertSame($expected, SchemaDotOrg::generate($model, $mapping));
+        $this->addSchemaToView($model, $mapping);
+        $this->assertSame($expected, $this->getSchemasFromView());
+    }
+
+    public function test_multiple_schemas()
+    {
+        $expected = '';
+
+        foreach ([
+            [
+                'model' => [
+                    'streetAddress' => '10 Downing Street',
+                    'locality' => 'City of Westminster',
+                    'region' => 'London',
+                    'postalCode' => 'SW1A 1AA'
+                ],
+                'mapping' => [
                     'PostalAddress' => [
-                        'adr.streetAddress',
-                        'addressLocality' => 'adr.locality',
-                        'addressRegion' => 'adr.region',
-                        'adr.postalCode'
+                        'streetAddress',
+                        'addressLocality' => 'locality',
+                        'addressRegion' => 'region',
+                        'postalCode'
                     ]
                 ],
-                'telephone' => 'tel'
+                'expected' => '<script type="application/ld+json">{'
+                    . '"@context":"https://schema.org",'
+                    . '"@type":"PostalAddress",'
+                    . '"streetAddress":"10 Downing Street",'
+                    . '"addressLocality":"City of Westminster",'
+                    . '"addressRegion":"London",'
+                    . '"postalCode":"SW1A 1AA"'
+                    . '}</script>'
             ],
-        ];
+            [
+                'model' => [
+                    'org' => 'UK Government',
+                    'adr' => [
+                        'streetAddress' => 'Palace of Westminster',
+                        'locality' => 'City of Westminster',
+                        'region' => 'London',
+                        'postalCode' => 'SW1A 0AA'
+                    ],
+                    'tel' => '+44-207-219-3000'
+                ],
+                'mapping' => [
+                    'GovernmentOrganization' => [
+                        'name' => 'org',
+                        'address' => [
+                            'PostalAddress' => [
+                                'adr.streetAddress',
+                                'addressLocality' => 'adr.locality',
+                                'addressRegion' => 'adr.region',
+                                'adr.postalCode'
+                            ]
+                        ],
+                        'telephone' => 'tel'
+                    ],
+                ],
+                'expected' => '<script type="application/ld+json">{'
+                    . '"@context":"https://schema.org",'
+                    . '"@type":"GovernmentOrganization",'
+                    . '"name":"UK Government",'
+                    . '"address":{'
+                    . '"@type":"PostalAddress",'
+                    . '"streetAddress":"Palace of Westminster",'
+                    . '"addressLocality":"City of Westminster",'
+                    . '"addressRegion":"London",'
+                    . '"postalCode":"SW1A 0AA"'
+                    . '},'
+                    . '"telephone":"+44-207-219-3000"'
+                    . '}</script>'
+            ],
+        ] as $schema) {
+            $this->assertSame($schema['expected'], SchemaDotOrg::generate($schema['model'], $schema['mapping']));
 
-        $expected = '<script type="application/ld+json">{';
-        $expected .= '"@context":"https://schema.org",';
-        $expected .= '"@type":"GovernmentOrganization",';
-        $expected .= '"name":"UK Government",';
-        $expected .= '"address":{';
-        $expected .= '"@type":"PostalAddress",';
-        $expected .= '"streetAddress":"10 Downing Street",';
-        $expected .= '"addressLocality":"City of Westminster",';
-        $expected .= '"addressRegion":"London",';
-        $expected .= '"postalCode":"SW1A"';
-        $expected .= '},';
-        $expected .= '"telephone":"+44-20-7925-0918"';
-        $expected .= '}</script>';
+            $expected .= $schema['expected'];
+            $this->addSchemaToView($schema['model'], $schema['mapping']);
+        }
 
-        $this->org['adr'] = $this->adr;
-
-        $this->assertSame($expected, SchemaDotOrg::generate($this->org, $mapping));
-        $this->assert($expected, $this->org, $mapping);
+        $this->assertSame($expected, $this->getSchemasFromView());
     }
 
-    public function testEnumeration()
+    public function test_list()
     {
         $model = [
-            'name' => 'The Ultimate Product',
-            'description' => 'The only product you will ever need',
-            'quantityAvailable' => random_int(0, 1),
-            'price' => random_int(99, 99999) / 100,
-            'currency' => 'GBP'
+            'name' => '20th Century UK Prime Ministers',
+            'alumni' => [
+                ['givenName' => 'Robert', 'familyName' => 'Gascoyne-Cecil'],
+                ['givenName' => 'Arthur', 'familyName' => 'Balfour'],
+                ['givenName' => 'Henry', 'familyName' => 'Campbell-Bannerman'],
+                ['givenName' => 'Herbert', 'familyName' => 'Asquith'],
+                ['givenName' => 'David', 'familyName' => 'Lloyd George'],
+                ['givenName' => 'Bonar', 'familyName' => 'Law'],
+                ['givenName' => 'Stanley', 'familyName' => 'Baldwin'],
+                ['givenName' => 'Ramsay', 'familyName' => 'MacDonald'],
+                ['givenName' => 'Neville', 'familyName' => 'Chamberlain'],
+                ['givenName' => 'Winston', 'familyName' => 'Churchill'],
+                ['givenName' => 'Clement', 'familyName' => 'Attlee'],
+                ['givenName' => 'Anthony', 'familyName' => 'Eden'],
+                ['givenName' => 'Harold', 'familyName' => 'Macmillan'],
+                ['givenName' => 'Alec', 'familyName' => 'Douglas-Home'],
+                ['givenName' => 'Harold', 'familyName' => 'Wilson'],
+                ['givenName' => 'Edward', 'familyName' => 'Heath'],
+                ['givenName' => 'James', 'familyName' => 'Callaghan'],
+                ['givenName' => 'Margaret', 'familyName' => 'Thatcher'],
+                ['givenName' => 'John', 'familyName' => 'Major'],
+                ['givenName' => 'Tony', 'familyName' => 'Blair'],
+            ]
         ];
 
         $mapping = [
-            'Product' => [
+            'Organization' => [
                 'name',
-                'description',
-                'offers' => [
-                    'Offer' => [
-                        'availability' => $model['quantityAvailable'] > 0
-                            ? SchemaDotOrg::ENUMERATION . 'InStock'
-                            : SchemaDotOrg::ENUMERATION . 'OutOfStock',
-                        'price',
-                        'priceCurrency' => 'currency'
+                'alumni' => [
+                    SchemaDotOrg::ARRAY => [
+                        'Person' => [
+                            'givenName',
+                            'familyName'
+                        ]
+                   ]
+                ]
+            ]
+        ];
+
+        $alumni = '';
+        foreach ($model['alumni'] as $alumnus) {
+            $alumni .= '{';
+            $alumni .= '"@type":"Person",';
+            $alumni .= '"givenName":"' . $alumnus['givenName'] . '",';
+            $alumni .= '"familyName":"' . $alumnus['familyName'] . '"';
+            $alumni .= '},';
+        }
+
+        $expected = '<script type="application/ld+json">{'
+            . '"@context":"https://schema.org",'
+            . '"@type":"Organization",'
+            . '"name":"20th Century UK Prime Ministers",'
+            . '"alumni":['
+            . substr($alumni, 0, -1)
+            . ']'
+            . '}</script>'
+        ;
+
+        $this->assertSame($expected, SchemaDotOrg::generate($model, $mapping));
+
+        $model['officeHolders'] = $model['alumni'];
+        unset($model['alumni']);
+        $mapping = [
+            'Organization' => [
+                'name',
+                'alumni' => [
+                    SchemaDotOrg::ARRAY  . 'officeHolders' => [
+                        'Person' => [
+                            'givenName',
+                            'familyName'
+                        ]
                     ]
                 ]
             ]
         ];
 
-        $expected = '<script type="application/ld+json">{';
-        $expected .= '"@context":"https://schema.org",';
-        $expected .= '"@type":"Product",';
-        $expected .= '"name":"The Ultimate Product",';
-        $expected .= '"description":"The only product you will ever need",';
-        $expected .= '"offers":{';
-        $expected .= '"@type":"Offer",';
-        $expected .= '"availability":"https://schema.org/' . ($model['quantityAvailable'] > 0 ? 'In' : 'OutOf') . 'Stock",';
-        $expected .= '"price":' . (string)$model['price']  . ',';
-        $expected .= '"priceCurrency":"GBP"';
-        $expected .= '}';
-        $expected .= '}</script>';
-
         $this->assertSame($expected, SchemaDotOrg::generate($model, $mapping));
-        $this->assert($expected, $model, $mapping);
     }
 
-    public function testStringLiteral() {
-        $model = [
-            'name' => 'The Ultimate Product',
-            'description' => 'The only product you will ever need',
-            'quantityAvailable' => random_int(0, 1),
-            'price' => random_int(99, 99999) / 100,
-        ];
-
-        $mapping = [
-            'Product' => [
-                'name',
-                'description',
-                'offers' => [
-                    'Offer' => [
-                        'availability' => $model['quantityAvailable'] > 0
-                            ? SchemaDotOrg::ENUMERATION . 'InStock'
-                            : SchemaDotOrg::ENUMERATION . 'OutOfStock',
-                        'price',
-                        'priceCurrency' => SchemaDotOrg::STRING_LITERAL . 'EUR'
+    public static function schemaProvider()
+    {
+        foreach ([
+            'Simple Schema' => [
+                'model' => [
+                    'streetAddress' => '10 Downing Street',
+                    'locality' => 'City of Westminster',
+                    'region' => 'London',
+                    'postalCode' => 'SW1A 1AA'
+                ],
+                'mapping' => [
+                    'PostalAddress' => [
+                        'streetAddress',
+                        'addressLocality' => 'locality',
+                        'addressRegion' => 'region',
+                        'postalCode'
                     ]
-                ]
-            ]
-        ];
+                ],
+                 'expected' => '<script type="application/ld+json">{'
+                     . '"@context":"https://schema.org",'
+                     . '"@type":"PostalAddress",'
+                     . '"streetAddress":"10 Downing Street",'
+                     . '"addressLocality":"City of Westminster",'
+                     . '"addressRegion":"London",'
+                     . '"postalCode":"SW1A 1AA"'
+                     . '}</script>'
+            ],
+             'Nested Schema' => [
+                 'model' => [
+                     'org' => 'UK Government',
+                     'adr' => [
+                         'streetAddress' => 'Palace of Westminster',
+                         'locality' => 'City of Westminster',
+                         'region' => 'London',
+                         'postalCode' => 'SW1A 0AA'
+                     ],
+                     'tel' => '+44-207-219-3000'
+                 ],
+                 'mapping' => [
+                     'GovernmentOrganization' => [
+                         'name' => 'org',
+                         'address' => [
+                             'PostalAddress' => [
+                                 'adr.streetAddress',
+                                 'addressLocality' => 'adr.locality',
+                                 'addressRegion' => 'adr.region',
+                                 'adr.postalCode'
+                             ]
+                         ],
+                         'telephone' => 'tel'
+                     ],
+                 ],
+                 'expected' => '<script type="application/ld+json">{'
+                     . '"@context":"https://schema.org",'
+                     . '"@type":"GovernmentOrganization",'
+                     . '"name":"UK Government",'
+                     . '"address":{'
+                     . '"@type":"PostalAddress",'
+                     . '"streetAddress":"Palace of Westminster",'
+                     . '"addressLocality":"City of Westminster",'
+                     . '"addressRegion":"London",'
+                     . '"postalCode":"SW1A 0AA"'
+                     . '},'
+                     . '"telephone":"+44-207-219-3000"'
+                     . '}</script>'
+             ],
+             'With string literal' => [
+                 'model' => [
+                     'name' => 'The Ultimate Product',
+                     'description' => 'The only product you will ever need',
+                     'quantityAvailable' => '{quantityAvailable}',
+                     'price' => '{price}',
+                     'currency' => 'GBP'
+                 ],
+                 'mapping' => [
+                     'Product' => [
+                         'name',
+                         'description',
+                         'offers' => [
+                             'Offer' => [
+                                 'availability' => '{availability}',
+                                 'price',
+                                 'priceCurrency' => 'currency'
+                             ]
+                         ]
+                     ]
+                 ],
+                 'expected' => '<script type="application/ld+json">{'
+                     . '"@context":"https://schema.org",'
+                     . '"@type":"Product",'
+                     . '"name":"The Ultimate Product",'
+                     . '"description":"The only product you will ever need",'
+                     . '"offers":{'
+                     . '"@type":"Offer",'
+                     . '"availability":"https://schema.org/{availability}",'
+                     . '"price":{price},'
+                     . '"priceCurrency":"GBP"'
+                     . '}'
+                     . '}</script>'
+             ],
+             'With Enumeration' => [
+                 'model' => [
+                     'name' => 'Another Product',
+                     'description' => 'The other product you need',
+                     'quantityAvailable' => '{quantityAvailable}',
+                     'price' => '{price}',
+                 ],
+                 'mapping' => [
+                     'Product' => [
+                         'name',
+                         'description',
+                         'offers' => [
+                             'Offer' => [
+                                 'availability' => '{availability}',
+                                 'price',
+                                 'priceCurrency' => SchemaDotOrg::STRING_LITERAL . 'EUR',
+                             ]
+                         ]
+                     ]
+                 ],
+                 'expected' => '<script type="application/ld+json">{'
+                     . '"@context":"https://schema.org",'
+                     . '"@type":"Product",'
+                     . '"name":"Another Product",'
+                     . '"description":"The other product you need",'
+                     . '"offers":{'
+                     . '"@type":"Offer",'
+                     . '"availability":"https://schema.org/{availability}",'
+                     . '"price":{price},'
+                     . '"priceCurrency":"EUR"'
+                     . '}'
+                     . '}</script>'
+             ]
+        ] as $name => $yield) {
+            if (array_key_exists('Product', $yield['mapping'])) {
+                $price = random_int(99, 99999) / 100;
+                $quantityAvailable = random_int(0, 1);
+                $availability = $quantityAvailable > 0
+                    ? SchemaDotOrg::ENUMERATION . 'InStock'
+                    : SchemaDotOrg::ENUMERATION . 'OutOfStock';
 
-        $expected = '<script type="application/ld+json">{';
-        $expected .= '"@context":"https://schema.org",';
-        $expected .= '"@type":"Product",';
-        $expected .= '"name":"The Ultimate Product",';
-        $expected .= '"description":"The only product you will ever need",';
-        $expected .= '"offers":{';
-        $expected .= '"@type":"Offer",';
-        $expected .= '"availability":"https://schema.org/' . ($model['quantityAvailable'] > 0 ? 'In' : 'OutOf') . 'Stock",';
-        $expected .= '"price":' . $model['price']  . ',';
-        $expected .= '"priceCurrency":"EUR"';
-        $expected .= '}';
-        $expected .= '}</script>';
+                $yield['model']['price'] = $price;
+                $yield['model']['quantityAvailable'] = $quantityAvailable === 1
+                    ? $quantityAvailable * random_int(1, 9999)
+                    : 0;
+                $yield['mapping']['Product']['offers']['Offer']['availability'] = $availability;
+                $yield['expected'] = strtr($yield['expected'], [
+                    '{availability}' => substr($availability, 1),
+                    '{price}' => (string)$price,
+                ]);
+            }
 
-        $this->assertSame($expected, SchemaDotOrg::generate($model, $mapping));
-        $this->assert($expected, $model, $mapping);
+            yield $name => $yield;
+        }
     }
 
-    private function assert(string $expected, array $model, array $mapping): void {
-        $view = $this->createView();
+    private function addSchemaToView(array $model, array $mapping): void
+    {
+        if ($this->view === null) {
+            $this->view = $this->createView();
+        }
 
-        SchemaDotOrg::addSchema($view, $model, $mapping);
+        SchemaDotOrg::addSchema($this->view, $model, $mapping);
+    }
+
+    private function getSchemasFromView(): string
+    {
         ob_start();
-        $view->endBody();
-        $actual = preg_replace('|<!\[CDATA\[YII-BLOCK-BODY-END-.+]]>|', '', ob_get_clean());
-
-        $this->assertSame($expected, $actual);
+        $this->view->endBody();
+        return preg_replace('|<!\[CDATA\[YII-BLOCK-BODY-END-.+]]>|', '', ob_get_clean());
     }
 
-    private function createView(): WebView {
+    private function createView(): WebView
+    {
         $listeners = (new ListenerCollection())
             ->add([SchemaDotOrg::class, 'handle'], BodyEnd::class);
 
