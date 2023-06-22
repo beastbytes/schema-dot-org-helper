@@ -18,10 +18,12 @@
         "ext-json": "*"
     },
     "require-dev": {
+        "consolidation/robo": "^4.0",
         "phpunit/phpunit": "^10.0",
+        "roave/infection-static-analysis-plugin": "^1.0",
         "roave/security-advisories": "dev-latest",
         "vimeo/psalm": "^5.0",
-        "yiisoft/view": "^7.0"
+        "yiisoft/view": "^8.0"
     },
     "autoload": {
         "psr-4": {
