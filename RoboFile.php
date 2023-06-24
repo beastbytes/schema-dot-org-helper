@@ -10,41 +10,44 @@ use Robo\Tasks;
  */
 class RoboFile extends Tasks
 {
-    public function release(ConsoleIO $io, $opt = [
-        'branch' => 'main',
-        'what' => 'patch'
-    ]): void
+    public function release($branch = 'master', $what = 'patch'): void
     {
+        $this->say($what);
         $result = $this->taskSemVer()
-            ->increment($opt['what'])
+            ->increment($what)
             ->run();
 
         $tag = $result->getMessage();
 
         $this->say("Releasing $tag");
-
-        $this->clean($io);
-        $this->publishGit($opt['branch'], ['tag' => $tag]);
+        $this->clean();
+        $this->createTag($branch, $tag);
     }
 
-    public function clean(ConsoleIO $io): void
+    public function clean(): void
     {
-        $io->say('Cleaning up');
-        $this->taskCleanDir(['logs'])->run();
-        $this->taskDeleteDir('logs')->run();
+        $dirs = ['.phpunit.cache', 'logs'];
+        $this->say('Cleaning up');
+        $this->taskCleanDir($dirs)->run();
+        $this->taskDeleteDir($dirs)->run();
     }
 
     /**
      * @desc creates a new version tag and pushes to GitHub
-     * @param null $branch
-     * @param array $opt
+     * @param string $branch
+     * @param string $tag
      */
-    public function publishGit($branch = null, $opt = ['tag' => null])
+    public function createTag(string $branch = '', string $tag = ''): void
     {
-        $this->say('Pushing ' . $opt['tag'] . ' to GitHub');
-        $this->taskExec('git tag ' . $opt['tag'])
-            ->run();
-        $this->taskExec("git push origin $branch --tags")
+        $this->say("Creating tag $tag on origin::$branch");
+
+        $this->taskGitStack()
+            ->stopOnFail()
+            ->add('.semver')
+            ->commit('Update version')
+            ->push('origin', $branch)
+            ->tag($tag)
+            ->push('origin', $tag)
             ->run();
     }
 }
