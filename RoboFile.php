@@ -20,16 +20,7 @@ class RoboFile extends Tasks
         $tag = $result->getMessage();
 
         $this->say("Releasing $tag");
-        $this->clean();
         $this->createTag($branch, $tag);
-    }
-
-    public function clean(): void
-    {
-        $dirs = ['.phpunit.cache', 'logs'];
-        $this->say('Cleaning up');
-        $this->taskCleanDir($dirs)->run();
-        $this->taskDeleteDir($dirs)->run();
     }
 
     /**
