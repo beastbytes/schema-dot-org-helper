@@ -1,8 +1,6 @@
 # Schema.org Helper (schema-dot-org-helper)
 A Helper for generating Schema.org schemas in JSON-LD.
 
-For license information see the [LICENSE](LICENSE.md) file.
-
 ## Installation
 
 The preferred way to install this extension is through [composer](http://getcomposer.org/download/).
@@ -249,20 +247,20 @@ For example:
     }
 }
 ```
-#Testing
+# Testing
 All testing is carried out from the root directory.
 
-##Unit testing
+## Unit testing
 The package is tested with [PHPUnit](https://phpunit.de/). To run tests:
 composer test
 
-##Mutation testing
+## Mutation testing
 The package tests are checked with [Infection mutation framework](https://infection.github.io/) with [Infection Static Analysis Plugin](https://github.com/Roave/infection-static-analysis-plugin). To run it:
 composer infection
 
-##Static analysis
+## Static analysis
 The code is statically analyzed with [Psalm](https://psalm.dev/). To run static analysis:
 composer psalm
 
-License
+# License
 The Schema.org Helper is free software. It is released under the terms of the BSD License. Please see [LICENSE](./license.md) for more information.
