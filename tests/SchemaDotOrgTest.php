@@ -10,16 +10,9 @@ namespace BeastBytes\SchemaDotOrg\tests;
 
 use BeastBytes\SchemaDotOrg\SchemaDotOrg;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Yiisoft\EventDispatcher\Dispatcher\Dispatcher;
-use Yiisoft\EventDispatcher\Provider\ListenerCollection;
-use Yiisoft\EventDispatcher\Provider\Provider;
-use Yiisoft\View\Event\WebView\BodyEnd;
-use Yiisoft\View\WebView;
 
 class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
 {
-    private WebView|null $view = null;
-
     protected function tearDown(): void
     {
         $this->view = null;
@@ -29,8 +22,6 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
     public function test_schema(array $model, array $mapping, string $expected)
     {
         $this->assertSame($expected, SchemaDotOrg::generate($model, $mapping));
-        $this->addSchemaToView($model, $mapping);
-        $this->assertSame($expected, $this->getSchemasFromView());
     }
 
     public function test_multiple_schemas()
@@ -103,12 +94,7 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
             ],
         ] as $schema) {
             $this->assertSame($schema['expected'], SchemaDotOrg::generate($schema['model'], $schema['mapping']));
-
-            $expected .= $schema['expected'];
-            $this->addSchemaToView($schema['model'], $schema['mapping']);
         }
-
-        $this->assertSame($expected, $this->getSchemasFromView());
     }
 
     public function test_list()
@@ -347,30 +333,5 @@ class SchemaDotOrgTest extends \PHPUnit\Framework\TestCase
 
             yield $name => $yield;
         }
-    }
-
-    private function addSchemaToView(array $model, array $mapping): void
-    {
-        if ($this->view === null) {
-            $this->view = $this->createView();
-        }
-
-        SchemaDotOrg::addSchema($this->view, $model, $mapping);
-    }
-
-    private function getSchemasFromView(): string
-    {
-        ob_start();
-        $this->view->endBody();
-        return preg_replace('|<!\[CDATA\[YII-BLOCK-BODY-END-.+]]>|', '', ob_get_clean());
-    }
-
-    private function createView(): WebView
-    {
-        $listeners = (new ListenerCollection())
-            ->add([SchemaDotOrg::class, 'handle'], BodyEnd::class);
-
-        $provider = new Provider($listeners);
-        return new WebView('', new Dispatcher($provider));
     }
 }

@@ -106,48 +106,6 @@ final class SchemaDotOrg
     public const STRING_LITERAL = ':';
 
     /**
-     * Add a schema to the view.
-     * The schema is processed on the BodyEnd event.
-     *
-     * @param WebView $view
-     * @param object|array $model
-     * @param array $mapping
-     * @return void
-     * @see \BeastBytes\SchemaDotOrg\SchemaDotOrg::handle()
-     */
-    public static function addSchema(WebView $view, object|array $model, array $mapping): void
-    {
-        /** @var array $schemas */
-        $schemas = $view->hasParameter(self::class)
-            ? $view->getParameter(self::class)
-            : []
-        ;
-
-        $schemas[] = compact('model', 'mapping');
-        $view->setParameter(self::class, $schemas);
-    }
-
-    /**
-     * Handle the BodyEnd event.
-     * Outputs the JSON-LD for schemas registered in the view.
-     *
-     * @param BodyEnd $event
-     * @throws JsonException
-     */
-    public static function handle(BodyEnd $event): void
-    {
-        /** @psalm-suppress InternalMethod */
-        $view = $event->getView();
-        if ($view->hasParameter(self::class)) {
-            /** @var array $schema */
-            foreach ($view->getParameter(self::class) as $schema) {
-                /** @psalm-suppress MixedArgument */
-                echo self::generate($schema['model'], $schema['mapping']);
-            }
-        }
-    }
-
-    /**
      * Returns a JSON-LD string for a schema.org type
      *
      * @param object|array $model

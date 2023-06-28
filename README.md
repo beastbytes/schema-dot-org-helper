@@ -14,13 +14,13 @@ php composer.phar require --prefer-dist beastbytes/schemadotorg
 or add
 
 ```json
-"beastbytes/schema-dot-org": "^1.0.0"
+"beastbytes/schema-dot-org": "^2.0"
 ```
 
 to the require section of your composer.json.
 
 ## Usage
-To directly generate and output a schema:
+To generate a schema:
 ```php
 // In the view
 use BeastBytes\SchemaDotOrg\SchemaDotOrg;
@@ -31,25 +31,17 @@ $mapping = [
 $model = [
     // model can be an array or an object
 ];
-echo SchemaDotOrg::generate($model, $mapping);
+$schema = SchemaDotOrg::generate($model, $mapping);
 // Multiple schemas can be generated
 ```
 
-Schemas can be generated in response to a WebView event; by default the helper responds to Yiisoft\View\Event\WebView\BodyEnd. The helper will output all schemas previously added in response to the event.
-
+The generated schema can be rendered directly
 ```php
-// In the view
-use BeastBytes\SchemaDotOrg\SchemaDotOrg;
-
-$mapping = [
-    // define mapping
-];
-$model = [
-    // model
-];
-
-SchemaDotOrg::addSchema($this, $model, $mapping);
-// Multiple schemas can be added 
+echo SchemaDotOrg::generate($model, $mapping);
+```
+or registered with the view:
+```php
+$this->registerJs(SchemaDotOrg::generate($model, $mapping));
 ```
 
 ## Defining a Schema Mapping
@@ -220,14 +212,13 @@ schemaDotOrg variable) or in the template
 ```
 Then in the template either:
 
-
-to output the schema's JSON-LD immediately:
+to echo the schema immediately:
 ```twig
 {{ schemaDotOrg.generate(model, mapping) }}
 ```
-or to add a schema to the view to be output on the BodyEnd event:
+or to register the schema with the view:
 ```twig
-{% do schemaDotOrg.addSchema(this, model, mapping) %}
+{% do this.registerJs(schemaDotOrg.generate(model, mapping)) %}
 ```
 ### Defining the Mapping
 
