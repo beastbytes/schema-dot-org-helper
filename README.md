@@ -14,7 +14,7 @@ php composer.phar require --prefer-dist beastbytes/schemadotorg
 or add
 
 ```json
-"beastbytes/schema-dot-org": "^1.0.0"
+"beastbytes/schema-dot-org": "^2.0"
 ```
 
 to the require section of your composer.json.
